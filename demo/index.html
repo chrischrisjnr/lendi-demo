@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lendi Refi Check-in Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Cabin:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control rail | CRM ledger | phone + broker handover. Stacks to one column on phones. */
+:root {
+  --bg: #f8f8f8; --surface: #ffffff; --surface-2: #f1f1f1; --line: #e1e4e5;
+  --fg: #2f2f2f; --muted: #5f5f5f;
+  --accent: #0d5a6d; --accent-fg: #ffffff; --accent-soft: #e5f8f6; --mint: #00c0a5; --mint-fg: #ffffff;
+  --band: #0d5a6d; --band-fg: #ffffff; --band-muted: #bfe3e0;
+  --out-bubble: #00c0a5; --out-fg: #ffffff; --in-bubble: #eef1f2; --in-fg: #2f2f2f;
+  --good: #087a68; --good-soft: #e5f8f6; --warn: #8a5a00; --warn-soft: #fbeccb;
+  --bad: #a3302a; --bad-soft: #f8dedb; --info: #0d5a6d; --info-soft: #dcecf0;
+  --phone: #173c47;
+  --display: "Cabin", "Trebuchet MS", sans-serif;
+  --body: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1c21; --surface: #10262d; --surface-2: #163139; --line: #224149;
+  --fg: #e6f0f1; --muted: #9db6ba;
+  --accent: #3fd3bd; --accent-fg: #05231e; --accent-soft: #123a3a; --mint: #00c0a5; --mint-fg: #05231e;
+  --band: #0d4a59; --band-fg: #ffffff; --band-muted: #a9d6d1;
+  --out-bubble: #00a78f; --out-fg: #ffffff; --in-bubble: #1d3a42; --in-fg: #e6f0f1;
+  --good: #5fdcc6; --good-soft: #123a36; --warn: #f0c060; --warn-soft: #3a2e12;
+  --bad: #f08a80; --bad-soft: #3d1f1c; --info: #8fd0e0; --info-soft: #14323b;
+  --phone: #03090b; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b1c21; --surface: #10262d; --surface-2: #163139; --line: #224149;
+  --fg: #e6f0f1; --muted: #9db6ba;
+  --accent: #3fd3bd; --accent-fg: #05231e; --accent-soft: #123a3a; --mint: #00c0a5; --mint-fg: #05231e;
+  --band: #0d4a59; --band-fg: #ffffff; --band-muted: #a9d6d1;
+  --out-bubble: #00a78f; --out-fg: #ffffff; --in-bubble: #1d3a42; --in-fg: #e6f0f1;
+  --good: #5fdcc6; --good-soft: #123a36; --warn: #f0c060; --warn-soft: #3a2e12;
+  --bad: #f08a80; --bad-soft: #3d1f1c; --info: #8fd0e0; --info-soft: #14323b;
+  --phone: #03090b; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1400px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band { background: var(--band); color: var(--band-fg); }
+.band-inner { max-width: 1400px; margin: 0 auto; padding-block: 28px 30px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band .eyebrow { color: var(--band-muted); }
+.band .lede { color: var(--band-muted); }
+.band .flow span { background: transparent; border-color: color-mix(in srgb, var(--band-fg) 35%, transparent); color: var(--band-fg); }
+.concept { display: inline-block; background: var(--mint); color: var(--mint-fg); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; margin-bottom: 10px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--muted); }
+.flow span { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+
+.grid { display: grid; grid-template-columns: 280px minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+@media (max-width: 1150px) { .grid { grid-template-columns: 280px minmax(0, 1fr); } .phone-col { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.panel h2 { font-family: var(--display); font-size: 17px; margin: 0 0 12px; font-weight: 700; color: var(--accent); }
+.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+
+.field { display: grid; gap: 6px; margin-bottom: 16px; }
+.field label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 500; }
+.field output, .field .val { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.auto { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--accent-soft); color: var(--good); border-radius: 4px; padding: 2px 6px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+input[type="number"], input[type="text"] { font: inherit; font-family: var(--mono); width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--fg); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+button { font: inherit; cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); padding: 8px 12px; font-weight: 500; }
+button:hover { border-color: var(--mint); }
+button.primary:hover:not(:disabled) { filter: brightness(0.95); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--mint); color: var(--mint-fg); border-color: var(--mint); text-transform: uppercase; letter-spacing: 0.06em; font-size: 13px; width: 100%; padding: 11px; font-weight: 600; }
+button.primary:disabled { opacity: 0.55; cursor: default; }
+button.link { background: none; border: none; color: var(--muted); padding: 4px 0; font-size: 12px; text-decoration: underline; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.stat { background: var(--surface-2); border-radius: 8px; padding: 10px; }
+.stat b { display: block; font-family: var(--display); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; color: var(--muted); }
+.stat.wide { grid-column: 1 / -1; }
+.stat.wide b { color: var(--accent); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 0 8px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--surface-2); }
+tr.selected td { background: var(--accent-soft); }
+.name { font-weight: 600; }
+.sub { font-size: 12px; color: var(--muted); }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.ready { background: var(--info-soft); color: var(--info); }
+.chip.sent { background: var(--accent-soft); color: var(--accent); }
+.chip.broker { background: var(--good-soft); color: var(--good); }
+.chip.skip { background: var(--surface-2); color: var(--muted); }
+.chip.stop { background: var(--bad-soft); color: var(--bad); }
+.chip.wait { background: var(--warn-soft); color: var(--warn); }
+.why { font-size: 12px; color: var(--muted); margin-top: 3px; max-width: 34ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+
+.phone-col { display: grid; gap: 16px; }
+.phone { background: var(--phone); border-radius: 34px; padding: 12px; max-width: 340px; width: 100%; margin: 0 auto; }
+.screen { background: var(--surface); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; height: 520px; }
+.screen-top { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); text-align: center; }
+.screen-top .who { font-weight: 600; }
+.screen-top .num { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.thread { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.empty { margin: auto; text-align: center; color: var(--muted); font-size: 13px; padding: 0 20px; }
+.bubble { max-width: 84%; padding: 9px 12px; border-radius: 16px; font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; animation: pop 0.25s ease-out; }
+.bubble.out { background: var(--in-bubble); color: var(--in-fg); align-self: flex-start; border-bottom-left-radius: 4px; }
+.bubble.in { background: var(--out-bubble); color: var(--out-fg); align-self: flex-end; border-bottom-right-radius: 4px; }
+.bubble a { color: inherit; }
+.meta { font-size: 10.5px; color: var(--muted); align-self: flex-start; display: flex; flex-wrap: wrap; gap: 4px; max-width: 90%; }
+.meta .ok { background: var(--good-soft); color: var(--good); border-radius: 4px; padding: 1px 5px; }
+.meta.right { align-self: flex-end; }
+.typing { align-self: flex-start; background: var(--in-bubble); border-radius: 16px; padding: 10px 14px; display: flex; gap: 4px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: 0.15s; } .typing i:nth-child(3) { animation-delay: 0.3s; }
+.composer { border-top: 1px solid var(--line); padding: 10px; display: grid; gap: 8px; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick button { font-size: 12px; padding: 5px 10px; border-radius: 999px; }
+.send-row { display: flex; gap: 6px; }
+.send-row input { font-family: var(--body); border-radius: 999px; padding: 7px 12px; }
+.send-row button { border-radius: 999px; background: var(--mint); color: var(--mint-fg); border-color: var(--mint); font-weight: 600; }
+.composer[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+.handover { border-left: 0; }
+.handover .card { border: 1px solid var(--mint); background: var(--good-soft); border-radius: 8px; padding: 12px; margin-top: 8px; animation: pop 0.3s ease-out; }
+.handover .card h3 { margin: 0 0 6px; font-size: 14px; font-family: var(--display); color: var(--fg); }
+.handover dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 8px 0 0; font-size: 12.5px; }
+.handover dt { color: var(--muted); }
+.handover dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.handover .said { font-style: italic; margin: 6px 0 0; }
+.handover .none { color: var(--muted); font-size: 13px; }
+
+footer { margin-top: 20px; color: var(--muted); font-size: 12px; max-width: 90ch; }
+
+@keyframes pop { from { transform: translateY(4px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bubble, .handover .card { animation: none; } .typing i { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="band"><div class="band-inner">
+  <header>
+    <div>
+      <span class="concept">Concept demo · not an official Lendi product</span>
+      <div class="eyebrow">A Guardian-style refinance agent · sample CRM · today is 18 Nov 2026</div>
+      <h1>Still on a higher rate? Your broker texts first.</h1>
+      <p class="lede">Finds customers coming up on a year since their last refinance, texts them how their rate compares with the best on the market, and hands anyone keen over to their broker.</p>
+    </div>
+    <div class="flow" aria-label="How the agent works">
+      <span>Read CRM</span><span>Check trigger &amp; consent</span><span>Draft SMS</span><span>Run checks</span><span>Send</span><span>Hand to broker</span>
+    </div>
+  </header>
+</div></div>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- Controls -->
+    <section class="panel" aria-labelledby="h-settings">
+      <h2 id="h-settings">Agent settings</h2>
+      <div class="field">
+        <label for="trigger">Months since last refinance <output id="triggerOut" for="trigger">11 months</output></label>
+        <input id="trigger" type="range" min="6" max="18" step="1" value="11">
+        <span class="hint">Text a customer once it's been this many months since they last refinanced. 10–11 months lets them shop before the 12-month mark.</span>
+      </div>
+      <div class="field">
+        <label for="best">Best rate right now <span class="auto">Auto-filled</span></label>
+        <input id="best" type="number" step="0.01" min="2" max="10" value="5.49">
+        <span class="hint">Pulled from Lendi's rate database each morning: the lowest variable owner-occupier rate on the panel. In this demo it's a sample figure you can edit.</span>
+      </div>
+      <div class="field">
+        <label for="gap">Min. rate gap</label>
+        <input id="gap" type="number" step="0.05" min="0" max="2" value="0.25">
+        <span class="hint">Only text if the customer's rate is at least this much higher.</span>
+      </div>
+      <div class="field">
+        <label for="cooldown">Don't re-text within <span class="val" id="cooldownOut">90 days</span></label>
+        <input id="cooldown" type="range" min="0" max="180" step="15" value="90">
+      </div>
+      <button class="primary" id="runBtn" type="button">Run agent</button>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><b id="sReady">0</b><span>in the window</span></div>
+        <div class="stat"><b id="sSent">0</b><span>texted</span></div>
+        <div class="stat"><b id="sReplies">0</b><span>replied</span></div>
+        <div class="stat"><b id="sBroker">0</b><span>with a broker</span></div>
+        <div class="stat wide"><b id="sSaving">$0</b><span>customer savings per month now in broker conversations</span></div>
+      </div>
+      <button class="link" id="resetBtn" type="button">Reset demo</button>
+    </section>
+
+    <!-- CRM -->
+    <section class="panel" aria-labelledby="h-crm">
+      <h2 id="h-crm">CRM: home loan customers</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Rate</th><th>Since last refi</th><th>Saving*</th><th>Agent decision</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><span class="chip ready">Ready</span> will be texted</span>
+        <span><span class="chip sent">Texted</span> waiting on reply</span>
+        <span><span class="chip broker">With broker</span> handed over</span>
+        <span><span class="chip skip">Skip</span> outside the rules</span>
+      </div>
+    </section>
+
+    <!-- Phone + handover -->
+    <div class="phone-col">
+      <div class="phone" aria-label="Customer's phone">
+        <div class="screen">
+          <div class="screen-top"><div class="who" id="pWho">No conversation yet</div><div class="num" id="pNum">Select a customer</div></div>
+          <div class="thread" id="thread" aria-live="polite"><div class="empty">Press <b>Run agent</b>, then tap a customer to see their text.</div></div>
+          <div class="composer" id="composer" aria-disabled="true">
+            <div class="quick">
+              <button type="button" data-reply="Yes keen, can someone call me after 5?">Yes keen</button>
+              <button type="button" data-reply="Would I have to pay a break fee?">Ask a question</button>
+              <button type="button" data-reply="STOP">STOP</button>
+            </div>
+            <form class="send-row" id="replyForm">
+              <input id="replyText" type="text" placeholder="Reply as the customer" aria-label="Reply as the customer">
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <section class="panel handover" aria-labelledby="h-hand">
+        <h2 id="h-hand">Broker handover</h2>
+        <div id="handovers"><p class="none">When a customer replies, the broker gets the full context here, so they never start the call cold.</p></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    *Estimated monthly repayment difference on principal and interest over the remaining term, rounded down to the nearest $10 so the agent never overstates it. Sample customers, phone numbers from the range reserved for fiction, and example booking links. The agent never answers loan questions itself: anything other than "yes" or "stop" goes to a person.
+  </footer>
+</div>
+
+<script>
+const TODAY = new Date("2026-11-18T00:00:00");
+const OPT_OUT = "Reply STOP to opt out.";
+const BANNED = ["guarantee", "guaranteed", "risk-free", "approved", "act now", "urgent"];
+const CRM = [
+  ["C001","Sarah","Nguyen","+61 491 570 006","Big Four Bank A",612000,6.29,"2025-12-04",26,"James Patel","book.example.com/james",true,false,null],
+  ["C002","Liam","O'Connor","+61 491 570 156","Regional Bank B",455000,6.09,"2025-11-20",22,"James Patel","book.example.com/james",true,false,null],
+  ["C003","Priya","Sharma","+61 491 570 157","Big Four Bank C",780000,6.44,"2025-12-28",28,"Mia Thompson","book.example.com/mia",true,false,null],
+  ["C004","Tom","Becker","+61 491 570 158","Online Lender D",390000,5.59,"2025-12-10",20,"Mia Thompson","book.example.com/mia",true,false,null],
+  ["C005","Grace","Kim","+61 491 570 159","Big Four Bank A",520000,6.35,"2026-06-15",27,"James Patel","book.example.com/james",true,false,null],
+  ["C006","Daniel","Rossi","+61 491 570 110","Big Four Bank B",695000,6.19,"2025-10-02",25,"Mia Thompson","book.example.com/mia",true,false,null],
+  ["C007","Aisha","Rahman","+61 491 570 313","Regional Bank B",340000,6.49,"2025-12-15",18,"James Patel","book.example.com/james",false,false,null],
+  ["C008","Ben","Walker","+61 491 570 737","Big Four Bank C",610000,6.24,"2025-11-30",26,"Mia Thompson","book.example.com/mia",true,true,null],
+  ["C009","Chloe","Martin","+61 491 571 266","Online Lender D",575000,6.14,"2026-01-05",29,"James Patel","book.example.com/james",true,false,null],
+  ["C010","Ethan","Li","+61 491 571 491","Big Four Bank A",830000,6.39,"2025-12-20",27,"Mia Thompson","book.example.com/mia",true,false,"2026-10-30"],
+  ["C011","Olivia","Brown","+61 491 571 804","Big Four Bank B",425000,6.04,"2024-11-11",21,"James Patel","book.example.com/james",true,false,null],
+  ["C012","Noah","Wilson","+61 491 572 549","Regional Bank B",505000,6.29,"2026-09-01",29,"Mia Thompson","book.example.com/mia",true,false,null],
+].map(r => ({ id:r[0], first:r[1], last:r[2], mobile:r[3], lender:r[4], balance:r[5], rate:r[6], refi:new Date(r[7]+"T00:00:00"),
+  years:r[8], broker:r[9], link:"https://"+r[10], consent:r[11], optedOut:r[12], lastContacted:r[13] ? new Date(r[13]+"T00:00:00") : null }));
+
+let state, selected = null;
+function resetState() { state = { sent:{}, threads:{}, optedOut:new Set(), broker:new Set(), handovers:[], replies:0 }; selected = null; }
+resetState();
+
+const $ = id => document.getElementById(id);
+const cfg = () => ({ trigger:+$("trigger").value, best:+$("best").value, gap:+$("gap").value, cooldown:+$("cooldown").value });
+const money = n => "$" + Math.round(n).toLocaleString("en-AU");
+const pct = n => n.toFixed(2) + "%";
+
+function repayment(bal, rate, years) { const r = rate/100/12, n = years*12; return r === 0 ? bal/n : bal*r/(1-Math.pow(1+r,-n)); }
+function saving(c, best) { return Math.max(0, Math.floor((repayment(c.balance,c.rate,c.years) - repayment(c.balance,best,c.years))/10)*10); }
+function monthsSinceRefi(c) { return (TODAY - c.refi) / 86400000 / 30.4375; }
+
+function evaluate(c, k) {
+  const m = monthsSinceRefi(c), reasons = [];
+  if (state.broker.has(c.id)) return { status:"broker", reasons:["Handed to " + c.broker.split(" ")[0]], m };
+  if (state.optedOut.has(c.id)) return { status:"stop", reasons:["Replied STOP; won't be texted again"], m };
+  if (state.sent[c.id]) return { status:"sent", reasons:["Texted today, waiting on a reply"], m };
+  if (!c.consent) reasons.push("No SMS consent on file");
+  if (c.optedOut) reasons.push("Opted out of marketing texts");
+  if (m < k.trigger) reasons.push(`Only ${m.toFixed(1)} months since last refinance (trigger ${k.trigger})`);
+  const gap = c.rate - k.best;
+  if (gap < k.gap - 1e-9) reasons.push(`Rate only ${gap.toFixed(2)}% above best`);
+  if (c.lastContacted && (TODAY - c.lastContacted)/86400000 < k.cooldown)
+    reasons.push(`Texted ${Math.round((TODAY - c.lastContacted)/86400000)} days ago`);
+  if (reasons.length) return { status:"skip", reasons, m };
+  return { status:"ready", reasons:[`${m.toFixed(1)} months since last refinance; on ${pct(c.rate)}, best is ${pct(k.best)}`], m };
+}
+
+function draft(c, k) {
+  const s = saving(c, k.best);
+  const saveLine = s >= 50 ? ` It could save you around ${money(s)} a month.` : "";
+  return `Hey ${c.first}, the best rate going around right now is ${pct(k.best)}. You're currently on ${pct(c.rate)}, which is higher. Let's talk about a refinance and how it can help you save some money.${saveLine} Book a chat with ${c.broker.split(" ")[0]}: ${c.link} ${OPT_OUT}`;
+}
+
+function checks(msg, c, k) {
+  const s = saving(c, k.best), lower = msg.toLowerCase();
+  const rates = [...msg.matchAll(/(\d+\.\d+)%/g)].map(x => (+x[1]).toFixed(2));
+  const amounts = [...msg.matchAll(/\$([\d,]+)/g)].map(x => +x[1].replace(/,/g,""));
+  return [
+    ["Name", msg.includes(c.first)],
+    ["Rates match CRM", rates.every(r => r === k.best.toFixed(2) || r === c.rate.toFixed(2)) && msg.includes(pct(k.best)) && msg.includes(pct(c.rate))],
+    ["Saving not overstated", amounts.every(a => a <= s)],
+    ["Booking link", msg.includes(c.link)],
+    ["Opt-out", msg.trim().endsWith(OPT_OUT)],
+    ["No pushy claims", !BANNED.some(b => new RegExp(`\\b${b}\\b`).test(lower))],
+    [`${msg.length} chars`, msg.length <= 320],
+  ];
+}
+
+const CHIP = { ready:["ready","Ready"], sent:["sent","Texted"], broker:["broker","With broker"], skip:["skip","Skip"], stop:["stop","Opted out"] };
+
+function render() {
+  const k = cfg();
+  $("triggerOut").textContent = `${k.trigger} months`;
+  $("cooldownOut").textContent = k.cooldown ? `${k.cooldown} days` : "no limit";
+  let ready = 0;
+  $("rows").innerHTML = CRM.map(c => {
+    const e = evaluate(c, k); if (e.status === "ready") ready++;
+    const [cls, label] = CHIP[e.status];
+    const s = saving(c, k.best);
+    const click = state.threads[c.id] ? "clickable" : "";
+    return `<tr class="${click} ${selected === c.id ? "selected" : ""}" data-id="${c.id}" ${click ? 'tabindex="0"' : ""}>
+      <td><div class="name">${c.first} ${c.last}</div><div class="sub">${c.lender} · ${money(c.balance)}</div></td>
+      <td class="num">${pct(c.rate)}</td>
+      <td class="num">${e.m.toFixed(1)} mo<div class="sub">${c.refi.toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}</div></td>
+      <td class="num">${s ? money(s) + "/mo" : "–"}</td>
+      <td><span class="chip ${cls}">${label}</span><div class="why">${e.reasons.join("; ")}</div></td></tr>`;
+  }).join("");
+  const sentCount = Object.keys(state.sent).length;
+  $("sReady").textContent = ready;
+  $("sSent").textContent = sentCount;
+  $("sReplies").textContent = state.replies;
+  $("sBroker").textContent = state.broker.size;
+  $("sSaving").textContent = money([...state.broker].reduce((t, id) => t + (state.sent[id]?.saving || 0), 0));
+  $("runBtn").disabled = ready === 0;
+  $("runBtn").textContent = ready ? `Run agent · text ${ready} customer${ready > 1 ? "s" : ""}` : "No one in the window";
+}
+
+function renderThread() {
+  const c = CRM.find(x => x.id === selected);
+  const t = $("thread"), comp = $("composer");
+  if (!c) return;
+  $("pWho").textContent = `${c.first} ${c.last}`;
+  $("pNum").textContent = c.mobile;
+  t.innerHTML = (state.threads[c.id] || []).map(m => {
+    if (m.typing) return `<div class="typing" aria-label="Agent is typing"><i></i><i></i><i></i></div>`;
+    const text = m.text.replace(/(https:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    let meta = "";
+    if (m.checks) meta = `<div class="meta">${m.checks.map(([n, ok]) => `<span class="${ok ? "ok" : ""}">${ok ? "✓" : "✗"} ${n}</span>`).join("")}</div>`;
+    if (m.intent) meta = `<div class="meta right">Agent read this as: <b>${m.intent}</b></div>`;
+    return `<div class="bubble ${m.dir}">${text}</div>${meta}`;
+  }).join("");
+  t.scrollTop = t.scrollHeight;
+  const open = state.sent[c.id] && !state.optedOut.has(c.id) && !state.broker.has(c.id);
+  comp.setAttribute("aria-disabled", open ? "false" : "true");
+}
+
+function select(id) { selected = id; render(); renderThread(); }
+
+const sleep = ms => new Promise(r => setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms));
+
+$("runBtn").addEventListener("click", async () => {
+  const k = cfg();
+  const batch = CRM.filter(c => evaluate(c, k).status === "ready");
+  $("runBtn").disabled = true;
+  for (const c of batch) {
+    const msg = draft(c, k);
+    state.sent[c.id] = { at: new Date(), saving: saving(c, k.best), rate: k.best };
+    state.threads[c.id] = [{ typing: true }];
+    select(c.id);
+    await sleep(700);
+    state.threads[c.id] = [{ dir: "out", text: msg, checks: checks(msg, c, k) }];
+    select(c.id);
+    await sleep(900);
+  }
+  select(batch[0]?.id ?? selected);
+});
+
+function classify(text) {
+  const t = text.trim().toLowerCase();
+  if (/\b(stop|unsubscribe|opt out|remove me)\b/.test(t)) return "opt_out";
+  if (/\b(yes|yep|yeah|keen|sure|ok|okay|call me|book|interested|sounds good)\b/.test(t)) return "interested";
+  if (/^(no|nah|no thanks|not now)\.?$/.test(t)) return "declined";
+  return "question";
+}
+
+async function reply(text) {
+  const c = CRM.find(x => x.id === selected);
+  if (!c || !text.trim()) return;
+  const intent = classify(text), b = c.broker.split(" ")[0], s = state.sent[c.id];
+  const label = { opt_out:"opt out", interested:"wants a chat", declined:"not now", question:"a question for a person" }[intent];
+  state.replies++;
+  state.threads[c.id].push({ dir: "in", text, intent: label }, { typing: true });
+  renderThread(); render();
+  await sleep(800);
+  state.threads[c.id].pop();
+  let out;
+  if (intent === "opt_out") { state.optedOut.add(c.id); out = "You're unsubscribed and won't hear from us about rates again."; }
+  else if (intent === "declined") { out = `No worries, ${c.first}. We'll check in again down the track.`; }
+  else {
+    state.broker.add(c.id);
+    out = intent === "interested"
+      ? `Great, ${c.first}. ${b} will call you within one business day, or pick a time here: ${c.link}`
+      : `Good question, ${c.first}. I've passed it to ${b}, who'll get back to you today.`;
+    state.handovers.unshift({ c, text, intent, saving: s.saving, best: s.rate });
+    renderHandovers();
+  }
+  state.threads[c.id].push({ dir: "out", text: out });
+  render(); renderThread();
+}
+
+function renderHandovers() {
+  $("handovers").innerHTML = state.handovers.map(h => `
+    <div class="card">
+      <div class="eyebrow">For ${h.c.broker}</div>
+      <h3>${h.c.first} ${h.c.last} ${h.intent === "interested" ? "wants a refinance chat" : "has a question"}</h3>
+      <p class="said">“${h.text.replace(/</g, "&lt;")}”</p>
+      <dl>
+        <dt>Mobile</dt><dd>${h.c.mobile}</dd>
+        <dt>Lender</dt><dd>${h.c.lender}</dd>
+        <dt>Balance</dt><dd>${money(h.c.balance)} · ${h.c.years} yrs left</dd>
+        <dt>Rate</dt><dd>${pct(h.c.rate)} → ${pct(h.best)}</dd>
+        <dt>Saving</dt><dd>~${money(h.saving)}/month</dd>
+        <dt>Last refi</dt><dd>${monthsSinceRefi(h.c).toFixed(1)} months ago</dd>
+      </dl>
+    </div>`).join("") || `<p class="none">When a customer replies, the broker gets the full context here, so they never start the call cold.</p>`;
+}
+
+document.querySelectorAll("[data-reply]").forEach(b => b.addEventListener("click", () => reply(b.dataset.reply)));
+$("replyForm").addEventListener("submit", e => { e.preventDefault(); reply($("replyText").value); $("replyText").value = ""; });
+$("rows").addEventListener("click", e => { const tr = e.target.closest("tr.clickable"); if (tr) select(tr.dataset.id); });
+$("rows").addEventListener("keydown", e => { const tr = e.target.closest("tr.clickable"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(tr.dataset.id); } });
+["trigger","best","gap","cooldown"].forEach(id => $(id).addEventListener("input", render));
+$("resetBtn").addEventListener("click", () => {
+  resetState(); renderHandovers();
+  $("thread").innerHTML = '<div class="empty">Press <b>Run agent</b>, then tap a customer to see their text.</div>';
+  $("pWho").textContent = "No conversation yet"; $("pNum").textContent = "Select a customer";
+  $("composer").setAttribute("aria-disabled", "true"); render();
+});
+render();
+</script>
+
+</body>
+</html>

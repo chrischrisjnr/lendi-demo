@@ -1,0 +1,13 @@
+{
+  "trigger_months": 11,
+  "best_market_rate": 5.49,
+  "min_rate_gap": 0.25,
+  "cooldown_days": 90,
+  "max_per_run": 50,
+  "quiet_hours": {"start": "20:00", "end": "09:00", "timezone": "Australia/Melbourne"},
+  "brand_name": "your home loan team",
+  "crm_source": "data/crm.csv",
+  "use_claude": true,
+  "claude_model": "claude-haiku-5-5",
+  "send_mode": "dry_run"
+}
