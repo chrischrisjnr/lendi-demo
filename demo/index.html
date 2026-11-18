@@ -154,6 +154,18 @@ footer { margin-top: 20px; color: var(--muted); font-size: 12px; max-width: 90ch
 @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .bubble, .handover .card { animation: none; } .typing i { animation: none; } }
 </style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LF65SXNEEQ"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag() { dataLayer.push(arguments); }
+gtag("js", new Date());
+gtag("config", "G-LF65SXNEEQ");
+function track(name, params) { try { gtag("event", name, params || {}); } catch (e) {} }
+document.addEventListener("click", (e) => {
+  const a = e.target.closest(".versions a, .nav a");
+  if (a) track("switch_demo", { to: a.textContent.trim() });
+});
+</script>
 </head>
 <body>
 
@@ -456,6 +468,7 @@ $("resetBtn").addEventListener("click", () => {
   $("composer").setAttribute("aria-disabled", "true"); render();
 });
 render();
+$("runBtn").addEventListener("click", () => track("crm_scanner_run"));
 </script>
 
 </body>
