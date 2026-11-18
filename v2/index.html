@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lendi Refi Conversation</title>
+<meta name="description" content="Concept demo: an AI agent takes a customer from a refinance nudge to a booked broker call over chat.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Cabin:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: phone chat (left) | what the agent is doing (right). Stacks on phones. */
+:root {
+  --bg: #f8f8f8; --surface: #ffffff; --surface-2: #f1f1f1; --line: #e1e4e5;
+  --fg: #2f2f2f; --muted: #5f5f5f;
+  --accent: #0d5a6d; --accent-soft: #e5f8f6; --mint: #00c0a5; --mint-fg: #ffffff;
+  --band: #0d5a6d; --band-fg: #ffffff; --band-muted: #bfe3e0;
+  --out-bubble: #00c0a5; --out-fg: #ffffff; --in-bubble: #eef1f2; --in-fg: #2f2f2f;
+  --good: #087a68; --good-soft: #e5f8f6; --warn: #8a5a00; --warn-soft: #fbeccb;
+  --info: #0d5a6d; --info-soft: #dcecf0;
+  --phone: #173c47; --scrim: rgba(10, 30, 36, 0.45);
+  --display: "Cabin", "Trebuchet MS", sans-serif;
+  --body: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1c21; --surface: #10262d; --surface-2: #163139; --line: #224149;
+  --fg: #e6f0f1; --muted: #9db6ba;
+  --accent: #3fd3bd; --accent-soft: #123a3a; --mint: #00c0a5; --mint-fg: #05231e;
+  --band: #0d4a59; --band-fg: #ffffff; --band-muted: #a9d6d1;
+  --out-bubble: #00a78f; --out-fg: #ffffff; --in-bubble: #1d3a42; --in-fg: #e6f0f1;
+  --good: #5fdcc6; --good-soft: #123a36; --warn: #f0c060; --warn-soft: #3a2e12;
+  --info: #8fd0e0; --info-soft: #14323b;
+  --phone: #03090b; --scrim: rgba(0, 0, 0, 0.6); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b1c21; --surface: #10262d; --surface-2: #163139; --line: #224149;
+  --fg: #e6f0f1; --muted: #9db6ba;
+  --accent: #3fd3bd; --accent-soft: #123a3a; --mint: #00c0a5; --mint-fg: #05231e;
+  --band: #0d4a59; --band-fg: #ffffff; --band-muted: #a9d6d1;
+  --out-bubble: #00a78f; --out-fg: #ffffff; --in-bubble: #1d3a42; --in-fg: #e6f0f1;
+  --good: #5fdcc6; --good-soft: #123a36; --warn: #f0c060; --warn-soft: #3a2e12;
+  --info: #8fd0e0; --info-soft: #14323b;
+  --phone: #03090b; --scrim: rgba(0, 0, 0, 0.6); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 14px; line-height: 1.45; }
+.band { background: var(--band); color: var(--band-fg); }
+.inner { max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band .inner { padding-block: 26px 28px; }
+.concept { display: inline-block; background: var(--mint); color: var(--mint-fg); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; margin-bottom: 10px; }
+.versions { float: right; display: flex; gap: 6px; font-size: 12px; }
+.versions a, .versions span { border: 1px solid color-mix(in srgb, var(--band-fg) 35%, transparent); color: var(--band-fg); border-radius: 999px; padding: 3px 10px; text-decoration: none; }
+.versions span { background: var(--band-fg); color: var(--band); font-weight: 600; }
+.versions a:hover { border-color: var(--mint); }
+h1 { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { color: var(--band-muted); margin: 8px 0 0; max-width: 64ch; }
+
+.stages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding: 0; list-style: none; }
+.stages li { font-size: 12px; border: 1px solid color-mix(in srgb, var(--band-fg) 30%, transparent); color: var(--band-muted); border-radius: 999px; padding: 3px 10px; transition: background 0.2s, color 0.2s; }
+.stages li.done { color: var(--band-fg); border-color: color-mix(in srgb, var(--band-fg) 55%, transparent); }
+.stages li.now { background: var(--mint); color: var(--mint-fg); border-color: var(--mint); font-weight: 600; }
+
+main.inner { padding-block: 20px 40px; }
+.grid { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 8px 12px; font-weight: 500; }
+button:hover { border-color: var(--mint); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--mint); color: var(--mint-fg); border-color: var(--mint); font-weight: 600; flex: 1; }
+button.primary:disabled { opacity: 0.55; cursor: default; }
+button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--mint); color: var(--good); }
+
+/* Phone */
+.phone { background: var(--phone); border-radius: 38px; padding: 12px; width: 100%; max-width: 390px; margin: 0 auto; position: sticky; top: 16px; }
+.screen { background: var(--surface); border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; height: min(720px, calc(100vh - 120px)); min-height: 560px; position: relative; }
+.screen-top { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--mint); color: var(--mint-fg); display: grid; place-items: center; font-family: var(--display); font-weight: 700; flex: none; }
+.avatar.broker { background: var(--accent); color: var(--surface); }
+.screen-top .who { font-weight: 600; line-height: 1.2; }
+.screen-top .status { font-size: 11px; color: var(--muted); }
+.thread { flex: 1; overflow-y: auto; padding: 14px 12px 10px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+.day { align-self: center; font-size: 11px; color: var(--muted); margin: 2px 0 6px; }
+.bubble { max-width: 86%; padding: 9px 12px; border-radius: 16px; font-size: 13.5px; line-height: 1.42; overflow-wrap: anywhere; animation: pop 0.25s ease-out; }
+.bubble.agent { background: var(--in-bubble); color: var(--in-fg); align-self: flex-start; border-bottom-left-radius: 4px; }
+.bubble.me { background: var(--out-bubble); color: var(--out-fg); align-self: flex-end; border-bottom-right-radius: 4px; }
+.pill { align-self: center; font-size: 11.5px; color: var(--good); background: var(--good-soft); border-radius: 999px; padding: 4px 10px; animation: pop 0.25s ease-out; }
+.typing { align-self: flex-start; background: var(--in-bubble); border-radius: 16px; padding: 11px 14px; display: flex; gap: 4px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: 0.15s; } .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+/* Cards in the thread */
+.card { align-self: flex-start; width: 86%; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; animation: pop 0.25s ease-out; }
+.card .card-body { padding: 12px; }
+.card .kicker { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--good); }
+.card h3 { font-family: var(--display); font-size: 16px; margin: 3px 0 4px; }
+.card p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.card .act { display: block; width: 100%; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: var(--accent-soft); color: var(--good); font-weight: 700; padding: 10px; text-align: center; }
+.card .act:disabled { background: var(--surface-2); color: var(--muted); cursor: default; }
+.card .act:hover:not(:disabled) { filter: brightness(0.97); }
+.ticks { list-style: none; padding: 0; margin: 8px 0 0; font-size: 12px; color: var(--muted); display: grid; gap: 3px; }
+.ticks li::before { content: "✓ "; color: var(--good); font-weight: 700; }
+
+.carousel { align-self: stretch; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 8px; margin: 0 -12px; padding-inline: 12px; animation: pop 0.25s ease-out; }
+.opt { flex: 0 0 78%; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.opt.best { border-color: var(--mint); box-shadow: 0 0 0 1px var(--mint) inset; }
+.opt .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.opt .num { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
+.tag.easy { background: var(--info-soft); color: var(--info); }
+.tag.top { background: var(--mint); color: var(--mint-fg); }
+.opt h4 { font-family: var(--display); font-size: 15px; margin: 0; }
+.opt .rate { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+.opt .rate small { font-size: 12px; color: var(--muted); font-weight: 500; font-family: var(--body); }
+.opt .save { font-weight: 700; color: var(--good); font-size: 13px; }
+.opt ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--muted); }
+
+.event { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; }
+.cal { border: 1px solid var(--line); border-radius: 8px; text-align: center; overflow: hidden; }
+.cal b { display: block; background: var(--mint); color: var(--mint-fg); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 0; }
+.cal span { display: block; font-family: var(--display); font-size: 20px; font-weight: 700; padding: 2px 0; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+.btn-row button { border: 0; border-radius: 0; padding: 10px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.btn-row button.yes { background: var(--accent-soft); color: var(--good); }
+.btn-row button + button { border-left: 1px solid var(--line); }
+.btn-row button:disabled { cursor: default; opacity: 0.7; }
+
+/* Quick replies + composer */
+.replies { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; justify-content: flex-end; min-height: 8px; }
+.replies button { border-radius: 999px; border-color: var(--mint); color: var(--good); background: var(--surface); font-size: 12.5px; padding: 6px 12px; text-align: left; animation: pop 0.25s ease-out; }
+.replies button:hover { background: var(--accent-soft); }
+.composer { margin: 8px 12px 12px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--muted); }
+
+/* Bottom sheets (open banking, calendar) */
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: none; align-items: flex-end; z-index: 5; }
+.scrim.open { display: flex; }
+.sheet { background: var(--surface); width: 100%; border-radius: 22px 22px 0 0; padding: 16px 16px 18px; animation: up 0.25s ease-out; max-height: 88%; overflow-y: auto; }
+.sheet .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 12px; }
+.sheet h3 { font-family: var(--display); font-size: 18px; margin: 0 0 4px; }
+.sheet p { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
+.choice { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-bottom: 8px; padding: 10px 12px; }
+.choice .mark { width: 28px; height: 28px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-weight: 700; font-size: 12px; color: var(--accent); flex: none; }
+.choice.picked { border-color: var(--mint); background: var(--accent-soft); }
+.perm { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.perm div { display: flex; justify-content: space-between; font-size: 12.5px; padding: 3px 0; }
+.perm div span:last-child { color: var(--muted); }
+.sheet .go { width: 100%; background: var(--mint); color: var(--mint-fg); border-color: var(--mint); font-weight: 700; padding: 11px; }
+.sheet .go:disabled { opacity: 0.5; cursor: default; }
+.fine { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; }
+.spinner { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--mint); margin: 18px auto 10px; animation: spin 0.8s linear infinite; }
+
+/* Agent panel */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.panel + .panel { margin-top: 16px; }
+.panel h2 { font-family: var(--display); font-size: 17px; margin: 0 0 4px; font-weight: 700; color: var(--accent); }
+.panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+.file { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.fact { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; transition: background 0.3s; }
+.fact span { display: block; font-size: 11px; color: var(--muted); }
+.fact b { font-family: var(--mono); font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; }
+.fact.pending b { color: var(--muted); }
+.fact.fresh { background: var(--accent-soft); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.log li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); animation: pop 0.25s ease-out; }
+.log li:first-child { border-top: 0; }
+.kind { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 4px; padding: 2px 6px; align-self: start; text-align: center; background: var(--surface-2); color: var(--muted); }
+.kind.read { background: var(--info-soft); color: var(--info); }
+.kind.send { background: var(--accent-soft); color: var(--good); }
+.kind.think { background: var(--warn-soft); color: var(--warn); }
+.kind.write { background: var(--good-soft); color: var(--good); }
+.log .what { font-weight: 600; font-size: 13px; }
+.log .detail { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.log code { font-family: var(--mono); font-size: 11.5px; }
+.log-empty { color: var(--muted); font-size: 13px; }
+.rules { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
+footer { font-size: 12px; color: var(--muted); margin-top: 20px; max-width: 80ch; }
+
+@keyframes pop { from { transform: translateY(4px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes up { from { transform: translateY(30px); opacity: 0.5; } to { transform: none; opacity: 1; } }
+@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; } .thread { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="band">
+  <div class="inner">
+    <nav class="versions" aria-label="Demo versions"><a href="../demo/">V1 · CRM scan</a><span aria-current="page">V2 · Conversation</span></nav>
+    <div class="concept">Concept demo · not an official Lendi product</div>
+    <h1>From "you're paying too much" to a booked broker call, in one chat.</h1>
+    <p class="lede">The agent texts Sarah about her rate, runs a quick finance health check through open banking, shows her three ways to save, then finds a time with her broker Jason. Tap the replies in the phone, or press Next.</p>
+    <ol class="stages" id="stages">
+      <li>1 · Nudge</li><li>2 · Reply</li><li>3 · Health check</li><li>4 · Options</li><li>5 · Broker</li><li>6 · Booked</li>
+    </ol>
+  </div>
+</div>
+
+<main class="inner">
+  <div class="grid">
+    <section aria-label="Customer's phone">
+      <div class="controls">
+        <button class="primary" id="next">Start</button>
+        <button id="auto" aria-pressed="false">Auto-play</button>
+        <button id="restart">Restart</button>
+      </div>
+      <div class="phone">
+        <div class="screen" id="screen">
+          <div class="screen-top">
+            <div class="avatar" aria-hidden="true">L</div>
+            <div><div class="who">Lendi</div><div class="status" id="status">Your home loan team</div></div>
+          </div>
+          <div class="thread" id="thread" aria-live="polite"></div>
+          <div class="replies" id="replies"></div>
+          <div class="composer" aria-hidden="true">Message</div>
+          <div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="What the agent is doing">
+      <div class="panel">
+        <h2>Sarah's file</h2>
+        <p class="sub">From the CRM, then filled in by the health check.</p>
+        <div class="file" id="file"></div>
+      </div>
+      <div class="panel">
+        <h2>What the agent is doing</h2>
+        <p class="sub">Every step it takes, in order.</p>
+        <ol class="log" id="log"><li class="log-empty" style="display:block">Press Start to send the first text.</li></ol>
+      </div>
+      <div class="panel">
+        <h2>Ground rules</h2>
+        <ul class="rules">
+          <li>Only texts customers who've agreed to hear from us. STOP ends it straight away.</li>
+          <li>Bank data is shared through open banking (CDR) with the customer's consent, read-only, and they can withdraw it at any time.</li>
+          <li>Options are general information. Jason confirms what suits Sarah before anything is applied for.</li>
+          <li>Questions the agent can't answer go straight to a person.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+  <footer>Concept demo made for a job application. Not an official Lendi product and not affiliated with or endorsed by Lendi Group. Every customer, lender, rate and time here is sample data, and nothing is sent or connected. Not financial advice.</footer>
+</main>
+
+<script>
+// ---------- sample data ----------
+const C = { first: "Sarah", last: "Nguyen", lender: "Big Four Bank A", rate: 6.29, balance: 612000, years: 26,
+            lastRefi: "4 Dec 2025", months: 11, mobile: "0491 570 006" };
+const BEST = 5.49;
+const BROKER = { name: "Jason Reid", first: "Jason", role: "Senior broker, Lendi", deals: "1,200+ home loans settled" };
+const OPTIONS = [
+  { tag: "Simplest", cls: "easy", title: "Ask Big Four Bank A to sharpen your rate", rate: 5.89,
+    points: ["Same bank, no paperwork", "Jason makes the call for you", "Usually sorted within a week"] },
+  { tag: "Switch", cls: "", title: "Move to Regional Bank B", rate: 5.64,
+    points: ["$0 application fee", "Free offset account", "About 3 weeks to switch"] },
+  { tag: "Lowest rate", cls: "top", title: "Move to Online Lender D", rate: BEST, best: true,
+    points: ["Lowest variable rate on the panel", "Unlimited extra repayments", "About 3 weeks to switch"] }
+];
+
+function repayment(rate) { const r = rate / 1200, n = C.years * 12; return C.balance * r / (1 - Math.pow(1 + r, -n)); }
+function saving(rate) { return Math.floor((repayment(C.rate) - repayment(rate)) / 10) * 10; }
+const $ = (id) => document.getElementById(id);
+const money = (n) => "$" + Math.round(n).toLocaleString("en-AU");
+
+// ---------- state ----------
+let run = 0;           // bumps on restart so stale timers stop
+let pending = null;    // the next customer action {label, fn}
+let autoplay = false;
+let started = false;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const facts = [
+  ["Lender", C.lender], ["Current rate", C.rate.toFixed(2) + "%"], ["Balance", money(C.balance)],
+  ["Last refinanced", C.lastRefi + " (" + C.months + " mths)"], ["Broker", BROKER.name],
+  ["Take-home pay", null, "income"], ["Monthly spending", null, "spend"], ["Est. property value", null, "value"],
+  ["Loan-to-value", null, "lvr"], ["Missed payments (12 mths)", null, "missed"]
+];
+
+function renderFile(filled = {}) {
+  $("file").innerHTML = facts.map(([label, val, key]) => {
+    const v = key ? filled[key] : val;
+    const cls = key ? (v ? "fact fresh" : "fact pending") : "fact";
+    return `<div class="${cls}"><span>${label}</span><b>${v || "waiting for health check"}</b></div>`;
+  }).join("");
+}
+
+function stage(i) { [...$("stages").children].forEach((li, n) => { li.className = n < i ? "done" : n === i ? "now" : ""; }); }
+
+function log(kind, what, detail) {
+  const ol = $("log"); const empty = ol.querySelector(".log-empty"); if (empty) empty.remove();
+  const li = document.createElement("li");
+  li.innerHTML = `<span class="kind ${kind}">${kind}</span><div><div class="what">${what}</div>${detail ? `<div class="detail">${detail}</div>` : ""}</div>`;
+  ol.appendChild(li);
+}
+
+function wait(ms) { const id = run; return new Promise((res, rej) => setTimeout(() => id === run ? res() : rej("stale"), reduce ? Math.min(ms, 150) : ms)); }
+function scroll() { const t = $("thread"); t.scrollTop = t.scrollHeight; }
+function add(el) { $("thread").appendChild(el); scroll(); return el; }
+function node(html, cls) { const d = document.createElement("div"); if (cls) d.className = cls; d.innerHTML = html; return d; }
+
+async function agentSays(text, extraDelay = 0) {
+  $("status").textContent = "typing…";
+  const t = add(node("<i></i><i></i><i></i>", "typing"));
+  await wait(500 + Math.min(text.length * 14, 1500) + extraDelay);
+  t.remove(); $("status").textContent = "Your home loan team";
+  add(node(text, "bubble agent"));
+  await wait(250);
+}
+function meSays(text) { add(node(text, "bubble me")); }
+function pill(text) { add(node(text, "pill")); }
+
+// Offer the customer some replies; the first is the one Next / Auto-play picks.
+function offer(choices) {
+  const box = $("replies"); box.innerHTML = "";
+  choices.forEach(([label, fn]) => {
+    const b = document.createElement("button"); b.textContent = label;
+    b.onclick = () => act(fn); box.appendChild(b);
+  });
+  setPending(choices[0][0], choices[0][1]);
+}
+function setPending(label, fn) {
+  pending = { label, fn };
+  $("next").disabled = false; $("next").textContent = "Next: " + label.replace(/^(.{34}).+$/, "$1…");
+  if (autoplay) { const id = run; setTimeout(() => { if (id === run && pending && pending.fn === fn) act(fn); }, reduce ? 300 : 1600); }
+}
+function act(fn) {
+  if (!pending) return;
+  pending = null; $("replies").innerHTML = ""; $("next").disabled = true; $("next").textContent = "Agent is working…";
+  fn().catch((e) => { if (e !== "stale") console.error(e); });
+}
+function done() { pending = null; $("next").disabled = true; $("next").textContent = "Done · press Restart to replay"; if (autoplay) toggleAuto(false); }
+
+// ---------- the conversation ----------
+async function step1() {
+  stage(0);
+  add(node("Today", "day"));
+  log("read", "Scanned the CRM for refinance check-ins", `<code>crm.find(months_since_refi ≥ 11)</code> → Sarah Nguyen, last refinanced ${C.lastRefi}`);
+  await wait(500);
+  log("read", "Pulled today's best rate from Lendi's rate database", `<code>rates.best_variable_oo()</code> → ${BEST}% · Sarah is on ${C.rate}%`);
+  await wait(500);
+  log("think", "Worth a text?", `Gap of ${(C.rate - BEST).toFixed(2)}% · about ${money(saving(BEST))}/mth on her balance · SMS consent ✓ · not contacted in 90 days ✓`);
+  await agentSays(`Hey ${C.first}, the best rate going around right now is ${BEST}%. You're currently on ${C.rate}%, which is higher. Let's talk about refinance and how it can help you save some money.`);
+  log("send", "Sent the opening text", "Passed message checks: name, both rates match the CRM, opt-out line, no pushy claims");
+  offer([
+    ["Yep, sounds good! Would love to get a rate like that. How can I do it?", step2],
+    ["Not right now, thanks", stepNo]
+  ]);
+}
+
+async function stepNo() {
+  meSays("Not right now, thanks");
+  log("think", "Read the reply", "Intent: <b>not now</b> · no follow-up for 90 days");
+  await agentSays(`No worries at all, ${C.first}. I'll leave it there. If rates move a lot I'll give you a shout, or just reply any time.`);
+  log("write", "Updated the CRM", "Marked 'not now', cooldown set to 90 days");
+  done();
+}
+
+async function step2() {
+  stage(1);
+  meSays("Yep, sounds good! Would love to get a rate like that. How can I do it?");
+  log("think", "Read the reply", "Intent: <b>interested</b> · next best step: health check before any options");
+  await agentSays(`Love it, ${C.first}. First up, let's do a quick finance health check so the options I show you are based on your real numbers, not guesses. Takes about 2 minutes.`);
+  stage(2);
+  const card = add(node(`
+    <div class="card-body">
+      <div class="kicker">Finance health check</div>
+      <h3>Securely connect your bank</h3>
+      <p>Share read-only data through open banking. We see income and spending, never your login.</p>
+      <ul class="ticks"><li>Bank-grade security under the Consumer Data Right</li><li>Read-only, you can withdraw any time</li></ul>
+    </div>
+    <button class="act">Start health check</button>`, "card"));
+  log("send", "Sent the health check link", "Open banking consent flow, data only used for this refinance");
+  const btn = card.querySelector(".act");
+  const go = () => { btn.disabled = true; btn.textContent = "Opened"; return openBanking(); };
+  btn.onclick = () => act(go);
+  setPending("Start health check", go);
+}
+
+// Open banking sheet: pick bank → review consent → connecting
+async function openBanking() {
+  const banks = [["A", C.lender, "Everyday + home loan"], ["R", "Regional Bank B", ""], ["O", "Other bank", ""]];
+  sheet(`<div class="grab"></div><h3>Connect your bank</h3><p>Choose where your pay goes in and your home loan comes out.</p>
+    ${banks.map(([m, n, s], i) => `<button class="choice${i === 0 ? " picked" : ""}" data-i="${i}"><span class="mark">${m}</span><span><b>${n}</b>${s ? `<br><small style="color:var(--muted)">${s}</small>` : ""}</span></button>`).join("")}
+    <div class="perm"><div><span>Data shared</span><span>Accounts, balances, transactions</span></div><div><span>Period</span><span>Last 12 months</span></div><div><span>Access ends</span><span>In 90 days, or when you say</span></div></div>
+    <button class="go" id="consent">Agree and connect</button>
+    <div class="fine">Demo only. Nothing is connected.</div>`);
+  $("sheet").querySelectorAll(".choice").forEach((b) => b.onclick = () => {
+    $("sheet").querySelectorAll(".choice").forEach((x) => x.classList.remove("picked")); b.classList.add("picked"); });
+  const go = async () => {
+    sheet(`<div class="grab"></div><div class="spinner"></div><h3 style="text-align:center">Connecting to ${C.lender}…</h3><p style="text-align:center">Securely fetching 12 months of data</p>`);
+    log("read", "Open banking consent granted", `<code>cdr.consent(${C.lender}, 12 mths, read-only)</code> → 2 accounts linked`);
+    await wait(1800);
+    closeSheet();
+    await step3();
+  };
+  $("consent").onclick = () => act(go);
+  setPending("Agree and connect", go);
+}
+
+async function step3() {
+  pill(`✓ ${C.lender} connected · 2 accounts`);
+  await agentSays(`Good on you, ${C.first}, thanks. Got it. Crunching the numbers now, give me a sec.`);
+  log("think", "Running the health check", "Categorising 12 months of transactions…");
+  $("status").textContent = "typing…";
+  const t = add(node("<i></i><i></i><i></i>", "typing"));
+  const filled = {};
+  const steps = [["income", "$11,400/mth", "Take-home pay: steady, same employer 12 mths"],
+                 ["spend", "$6,850/mth", "Regular spending, after the home loan"],
+                 ["value", "$900,000", "Property value estimate from recent sales nearby"],
+                 ["lvr", "68%", "Under 80%, so no lenders mortgage insurance on a switch"],
+                 ["missed", "None", "Repayments on time every month"]];
+  for (const [k, v, d] of steps) { await wait(650); filled[k] = v; renderFile(filled); log("read", d.split(":")[0], d.includes(":") ? d.split(": ")[1] : v); }
+  await wait(500);
+  log("read", "Matched against the lender panel", `<code>lenders.match(LVR 68%, ${money(C.balance)}, owner-occupier)</code> → 3 options worth showing`);
+  await wait(600);
+  t.remove(); $("status").textContent = "Your home loan team";
+  await step4();
+}
+
+async function step4() {
+  stage(3);
+  await agentSays(`All done. You're in great shape: steady income, plenty left over each month and 32% equity. Here are three ways to pay less, from easiest to biggest saving 👇`);
+  const car = add(node(OPTIONS.map((o, i) => `
+    <article class="opt${o.best ? " best" : ""}">
+      <div class="top"><span class="num">Option ${i + 1} of 3</span><span class="tag ${o.cls}">${o.tag}</span></div>
+      <h4>${o.title}</h4>
+      <div class="rate">${o.rate.toFixed(2)}% <small>variable</small></div>
+      <div class="save">Save about ${money(saving(o.rate))}/mth</div>
+      <ul>${o.points.map((p) => `<li>${p}</li>`).join("")}</ul>
+    </article>`).join(""), "carousel"));
+  car.setAttribute("aria-label", "Three refinance options");
+  log("send", "Sent three option cards", OPTIONS.map((o) => `${o.rate}% → ${money(saving(o.rate))}/mth`).join(" · ") + " · general info only, broker confirms");
+  await wait(reduce ? 100 : 1400);
+  if (!reduce) { car.scrollTo({ left: car.scrollWidth, behavior: "smooth" }); await wait(1200); car.scrollTo({ left: 0, behavior: "smooth" }); }
+  await step5();
+}
+
+async function step5() {
+  stage(4);
+  await agentSays(`To get this rolling, how about a quick call with ${BROKER.first}? He's your broker, and he'll already have your health check and these three options, so you won't have to repeat anything. Want me to set it up?`);
+  add(node(`
+    <div class="card-body" style="display:flex;gap:10px;align-items:center">
+      <div class="avatar broker" style="width:44px;height:44px;font-size:17px" aria-hidden="true">JR</div>
+      <div><div class="kicker">Your broker</div><h3 style="margin:1px 0 0">${BROKER.name}</h3><p>${BROKER.role} · ${BROKER.deals}</p></div>
+    </div>`, "card"));
+  log("read", "Looked up Sarah's broker", `${BROKER.name} · free 20-min call slots this week`);
+  offer([["Yes please, set it up", step6], ["I'll call him myself", stepSelf]]);
+}
+
+async function stepSelf() {
+  meSays("I'll call him myself");
+  await agentSays(`Easy. ${BROKER.first}'s direct line is 03 9000 0000 and he's already got your file. Talk soon!`);
+  log("write", "Broker handover", `Sent ${BROKER.first} the health check, options and conversation`);
+  stage(5); done();
+}
+
+async function step6() {
+  meSays("Yes please, set it up");
+  log("think", "Read the reply", "Intent: <b>book a call</b>");
+  await agentSays(`Done deal. Easiest way: give me access to your calendar and I'll find a time that works for you and ${BROKER.first}. I only look at when you're busy, not what's in your meetings.`);
+  const card = add(node(`
+    <div class="card-body">
+      <div class="kicker">Find a time</div>
+      <h3>Connect your calendar</h3>
+      <p>Free/busy only. Access ends once the call is booked.</p>
+    </div>
+    <button class="act">Connect calendar</button>`, "card"));
+  log("send", "Sent the calendar link", "Free/busy access only, ends after booking");
+  const btn = card.querySelector(".act");
+  const go = () => { btn.disabled = true; btn.textContent = "Opened"; return calendarSheet(); };
+  btn.onclick = () => act(go);
+  setPending("Connect calendar", go);
+}
+
+async function calendarSheet() {
+  const cals = [["G", "Google Calendar"], ["O", "Outlook"], ["A", "Apple Calendar"]];
+  sheet(`<div class="grab"></div><h3>Connect your calendar</h3><p>Lendi will see when you're free or busy for the next 7 days.</p>
+    ${cals.map(([m, n], i) => `<button class="choice${i === 0 ? " picked" : ""}"><span class="mark">${m}</span><b>${n}</b></button>`).join("")}
+    <div class="perm"><div><span>Access</span><span>Free/busy only</span></div><div><span>Ends</span><span>After the call is booked</span></div></div>
+    <button class="go" id="calgo">Allow access</button><div class="fine">Demo only. Nothing is connected.</div>`);
+  $("sheet").querySelectorAll(".choice").forEach((b) => b.onclick = () => {
+    $("sheet").querySelectorAll(".choice").forEach((x) => x.classList.remove("picked")); b.classList.add("picked"); });
+  const go = async () => {
+    sheet(`<div class="grab"></div><div class="spinner"></div><h3 style="text-align:center">Checking your week…</h3><p style="text-align:center">Looking for times you and ${BROKER.first} are both free</p>`);
+    log("read", "Calendar connected", `<code>calendar.freebusy(Sarah, ${BROKER.first}, next 7 days)</code>`);
+    await wait(1500);
+    closeSheet();
+    await step7();
+  };
+  $("calgo").onclick = () => act(go);
+  setPending("Allow access", go);
+}
+
+async function step7() {
+  pill("✓ Calendar connected");
+  log("think", "Picked a time", "First 20-minute slot where both are free: Thu 4:30–4:50pm");
+  await agentSays(`Great. I reckon we can do a call on Thursday at 4:30pm. You're free and so is ${BROKER.first}. He'll call you on ${C.mobile}. Lock it in?`);
+  const card = add(node(`
+    <div class="card-body event">
+      <div class="cal"><b>Thu</b><span>20</span></div>
+      <div><div class="kicker">Refinance chat</div><h3 style="margin:1px 0 0">4:30 – 4:50pm</h3><p>Phone call with ${BROKER.name}</p></div>
+    </div>
+    <div class="btn-row"><button class="yes">Lock it in</button><button class="alt">Another time</button></div>`, "card"));
+  const yes = card.querySelector(".yes"), alt = card.querySelector(".alt");
+  const go = () => { yes.disabled = alt.disabled = true; yes.textContent = "Locked in ✓"; return step8(); };
+  yes.onclick = () => act(go);
+  alt.onclick = () => act(async () => {
+    yes.disabled = alt.disabled = true;
+    meSays("Can we do another time?");
+    await agentSays(`Sure. How about Friday at 12:15pm instead? You're both free then too.`);
+    const go2 = () => step8("Fri 21 Nov, 12:15pm");
+    offer([["Friday works", async () => { meSays("Friday works"); await go2(); }]]);
+  });
+  setPending("Lock it in", go);
+}
+
+async function step8(when = "Thu 20 Nov, 4:30pm") {
+  stage(5);
+  log("write", "Booked the call", `Invite sent to Sarah and ${BROKER.first} · ${when}`);
+  log("write", `Handed over to ${BROKER.first}`, "Health check, 3 options, full conversation and Sarah's preferences, added to the CRM");
+  await agentSays(`Locked in for ${when} 🎉 You'll get a calendar invite now. ${BROKER.first} has everything, so the call is just about picking the option that suits you. Speak soon, ${C.first}!`);
+  pill("✓ Call booked · calendar access ended");
+  log("write", "Tidied up", "Calendar access withdrawn · open banking access ends in 90 days or when Sarah says");
+  done();
+}
+
+// ---------- sheet helpers ----------
+function sheet(html) { $("sheet").innerHTML = html; $("scrim").classList.add("open"); const b = $("sheet").querySelector(".go"); if (b) b.focus({ preventScroll: true }); }
+function closeSheet() { $("scrim").classList.remove("open"); }
+
+// ---------- controls ----------
+function reset() {
+  run++; pending = null; started = false;
+  $("thread").innerHTML = ""; $("replies").innerHTML = ""; closeSheet();
+  $("log").innerHTML = '<li class="log-empty" style="display:block">Press Start to send the first text.</li>';
+  $("status").textContent = "Your home loan team";
+  $("next").disabled = false; $("next").textContent = "Start";
+  stage(-1); renderFile();
+}
+function start() {
+  if (started) return; started = true;
+  $("next").disabled = true; $("next").textContent = "Agent is working…";
+  step1().catch((e) => { if (e !== "stale") console.error(e); });
+}
+function toggleAuto(on) {
+  autoplay = on; $("auto").setAttribute("aria-pressed", String(on));
+  if (on) { if (!started) start(); else if (pending) setPending(pending.label, pending.fn); }
+}
+$("next").onclick = () => { if (!started) start(); else if (pending) act(pending.fn); };
+$("auto").onclick = () => toggleAuto(!autoplay);
+$("restart").onclick = () => { const a = autoplay; reset(); if (a) toggleAuto(true); };
+reset();
+</script>
+</body>
+</html>

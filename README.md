@@ -45,7 +45,14 @@ Drop `--today` to use the real date. Delete `outbox/` to start again.
 `data/crm.csv` is sample data. To connect a real CRM, write an adapter like `CsvCRM` that
 returns `Customer` records (HubSpot, Salesforce, or a broker platform's export).
 
-## Demo page
+## Demo pages
+
+- **V1 · CRM scan** (`demo/`): adjust the trigger, scan the CRM, send texts, hand replies to a broker.
+- **V2 · Conversation** (`v2/`): one customer's full chat. The opening text, a finance health check
+  through open banking, three option cards, then the agent books a call with the broker using
+  calendar free/busy access. Tap the replies in the phone, press Next, or turn on Auto-play.
+  Live at https://chrischrisjnr.github.io/lendi-demo/v2/
+
 
 `demo/index.html` is a self-contained visual version for screen recording. Serve it with
 `python3 -m http.server -d demo` and open http://localhost:8000. The best rate is shown as
