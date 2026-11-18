@@ -47,8 +47,8 @@ returns `Customer` records (HubSpot, Salesforce, or a broker platform's export).
 
 ## Demo pages
 
-- **V1 · CRM scan** (`demo/`): adjust the trigger, scan the CRM, send texts, hand replies to a broker.
-- **V2 · Conversation** (`v2/`): one customer's full chat. The opening text, a finance health check
+- **CRM Scanner** (`demo/`): adjust the trigger, scan the CRM, send texts, hand replies to a broker.
+- **Conversation agent** (`v2/`): one customer's full chat. The opening text, a finance health check
   through open banking, three option cards, then the agent books a call with the broker using
   calendar free/busy access. Tap the replies in the phone, press Next, or turn on Auto-play.
   Live at https://chrischrisjnr.github.io/lendi-demo/v2/
