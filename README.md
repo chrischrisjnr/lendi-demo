@@ -1,5 +1,7 @@
 # Refi Check-in Agent
 
+**Live demo:** https://chrischrisjnr.github.io/lendi-demo/
+
 Reads a home loan CRM, finds customers coming up on a year since their last refinance,
 texts them how their rate compares with the best on the market, and hands anyone who
 replies to their broker with full context.
